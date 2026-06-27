@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مساعد طالب زيد</title>
+    <!-- ربط مكتبة تليجرام لـ WebApps -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --text-color: #222222;
+            --card-bg: #ffffff;
+            --primary-color: #248bcf;
+            --accent-color: #e74c3c;
+        }
+        /* التوافق التلقائي مع ألوان التليجرام */
+        body.tg {
+            --bg-color: var(--tg-theme-bg-color, #f4f6f9);
+            --text-color: var(--tg-theme-text-color, #222222);
+            --card-bg: var(--tg-theme-secondary-bg-color, #ffffff);
+            --primary-color: var(--tg-theme-button-color, #248bcf);
+        }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        h3 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid rgba(0,0,0,0.05); padding-bottom: 8px;}
+        .countdown-container { display: flex; justify-content: space-around; text-align: center; margin-top: 15px; }
+        .time-box { background: rgba(36, 139, 207, 0.1); padding: 10px; border-radius: 8px; min-width: 60px; }
+        .time-box span { display: block; font-size: 20px; font-weight: bold; color: var(--primary-color); }
+        .time-box label { font-size: 11px; opacity: 0.8; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; background: var(--bg-color); color: var(--text-color); }
+        button { width: 100%; padding: 12px; background: var(--primary-color); border: none; color: white; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+        .result { margin-top: 15px; padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; display: none; }
+        .success { background-color: #2ecc71; color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- كارت العداد التنازلي -->
+    <div class="card">
+        <h3>⏳ الوقت المتبقي على الامتحانات</h3>
+        <div class="countdown-container" id="countdown">
+            <div class="time-box"><span id="days">00</span><label>يوم</label></div>
+            <div class="time-box"><span id="hours">00</span><label>ساعة</label></div>
+            <div class="time-box"><span id="minutes">00</span><label>دقيقة</label></div>
+            <div class="time-box"><span id="seconds">00</span><label>ثانية</label></div>
+        </div>
+    </div>
+
+    <!-- كارت حساب النسبة -->
+    <div class="card">
+        <h3>📊 حاسبة النسبة المئوية</h3>
+        <div class="input-group">
+            <label>المجموع الكلي للمواد:</label>
+            <input type="number" id="totalMarks" value="280" placeholder="مثلاً: 280">
+        </div>
+        <div class="input-group">
+            <label>درجاتك الحالية / المتوقعة:</label>
+            <input type="number" id="myMarks" placeholder="أدخل درجاتك">
+        </div>
+        <button onclick="calculatePercentage()">احسب النسبة المئوية</button>
+        <div id="resultBox" class="result success"></div>
+    </div>
+
+    <script>
+        // تهيئة الـ WebApp وتطبيق ثيم التليجرام
+        const tg = window.Telegram.WebApp;
+        if (tg) {
+            tg.ready();
+            document.body.classList.add('tg');
+        }
+
+        // 1. منطق العداد التنازلي (تاريخ الامتحانات الافتراضي 15 يوليو 2026)
+        const targetDate = new Date("July 15, 2026 09:00:00").getTime();
+
+        const timer = setInterval(function() {
+            const now = new Date().getTime();
+            const diff = targetDate - now;
+
+            if (diff <= 0) {
+                clearInterval(timer);
+                document.getElementById("countdown").innerHTML = "<b>بالتوفيق والنجاح لجميع الطلبة! 🎉</b>";
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById("days").innerText = days < 10 ? "0" + days : days;
+            document.getElementById("hours").innerText = hours < 10 ? "0" + hours : hours;
+            document.getElementById("minutes").innerText = minutes < 10 ? "0" + minutes : minutes;
+            document.getElementById("seconds").innerText = seconds < 10 ? "0" + seconds : seconds;
+        }, 1000);
+
+        // 2. منطق حساب النسبة المئوية
+        function calculatePercentage() {
+            const total = parseFloat(document.getElementById("totalMarks").value);
+            const mine = parseFloat(document.getElementById("myMarks").value);
+            const resultBox = document.getElementById("resultBox");
+
+            if (!total || !mine || mine > total || mine < 0) {
+                alert("الرجاء إدخال درجات صحيحة ومطابقة للمجموع!");
+                return;
+            }
+
+            const percentage = ((mine / total) * 100).toFixed(2);
+            let estimation = "";
+
+            if (percentage >= 85) estimation = "ممتاز 🔥";
+            else if (percentage >= 75) estimation = "جيد جداً ✨";
+            else if (percentage >= 65) estimation = "جيد 👍";
+            else if (percentage >= 50) estimation = "مقبول 🙏";
+            else estimation = "ضعيف، شد حيلك أكثر 💪";
+
+            resultBox.style.display = "block";
+            resultBox.innerHTML = `نسبتك هي: ${percentage}% <br> التقدير: ${estimation}`;
+        }
+    </script>
+</body>
+</html>
